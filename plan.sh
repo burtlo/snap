@@ -1,6 +1,6 @@
 pkg_name=snap
 pkg_origin=franklinwebber
-pkg_version="0.1.0"
+pkg_version="0.1.1"
 
 pkg_maintainer="Franklin Webber <franklin.webber@gmail.com>"
 pkg_license=('Apache-2.0')
