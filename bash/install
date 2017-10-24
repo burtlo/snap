@@ -1,10 +1,32 @@
 # !/bin/bash
 
+function _find_packages {
+  local pkg_name=$1
+
+  local raw_packages=( ./results/$HAB_ORIGIN-$pkg_name-*.hart )
+
+  local pkg_count=${#raw_packages[@]}
+
+  declare -gA found_pkgs
+
+  for i in ${!raw_packages[@]}; do
+      current_count=$((pkg_count-1-i))
+      if [ $current_count == 0 ] ; then
+        # echo "Adding HEAD"
+        found_pkgs+=([HEAD]=${raw_packages[$i]})
+      else
+        # echo "Adding HEAD~$current_count"
+        found_pkgs+=([HEAD~$current_count]=${raw_packages[$i]})
+        found_pkgs+=([~$current_count]=${raw_packages[$i]})
+      fi
+  done
+}
+
 function install {
   local pkg_name=$1
   local pkg_position=$2
 
-  local found_pkgs=( ./results/$HAB_ORIGIN-$pkg_name-*.hart )
+  _find_packages $pkg_name
 
   if [ -z "$pkg_name" ] ; then
       echo "To install a package, I must know its name."
@@ -13,8 +35,7 @@ function install {
       return 1
   fi
 
-
-  if [ 0 = ${!found_pkgs[@]} ] ; then
+  if [ "0" = ${#found_pkgs[@]} ] ; then
       echo "No packages found."
       echo "* Is there a results directory?"
       echo "* Did you specify the name of the package correctly?"
@@ -25,26 +46,14 @@ function install {
       return 1
   fi
 
-  local pkg_count=${#found_pkgs[@]}
-
-  declare -A indexed_pkgs
-
-  for i in ${!found_pkgs[@]}; do
-      current_count=$((pkg_count-1-i))
-      if [ $current_count == 0 ] ; then
-        indexed_pkgs+=([HEAD]=${found_pkgs[$i]})
-      else
-        indexed_pkgs+=([HEAD~$current_count]=${found_pkgs[$i]})
-        indexed_pkgs+=([~$current_count]=${found_pkgs[$i]})
-      fi
-  done
 
   # Run the latest package if no pkg_position has been specified.
-  local pkg_to_run=${indexed_pkgs[HEAD]}
+  local pkg_to_run=${found_pkgs[HEAD]}
 
+  echo "Package to run $pkg_to_run"
   # If there is a pkg_position then find that package. Stop if it cannot.
   if ! [ -z "$pkg_position" ] ; then
-    pkg_to_run=${indexed_pkgs[$pkg_position]}
+    pkg_to_run=${found_pkgs[$pkg_position]}
 
     if [ -z "$pkg_to_run" ] ; then
       echo "Could not find a package at $pkg_position. There are $pkg_count total package(s)."
@@ -53,8 +62,7 @@ function install {
   fi
 
   echo "Installing $pkg_to_run"
-  hab pkg install $pkg_to_run -b
+  hab pkg install $pkg_to_run ${@:3:99}
 }
-
 
 install $@
