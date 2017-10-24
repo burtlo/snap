@@ -1,0 +1,46 @@
+# !/bin/bash
+
+function list {
+  local pkg_name=$1
+
+  local found_pkgs=( ./results/$HAB_ORIGIN-$pkg_name-*.hart )
+
+  if [ -z "$pkg_name" ] ; then
+      echo "To list a package, I must know its name."
+      echo ""
+      echo " Try: $ list PKG_NAME"
+      return 1
+  fi
+
+
+  if [ 0 = ${!found_pkgs[@]} ] ; then
+      echo "No packages found."
+      echo "* Is there a results directory?"
+      echo "* Did you specify the name of the package correctly?"
+      echo "* Did you build your package?"
+      # echo "* Did you want me to build something first?"
+      # echo "* In the results directory I found ..."
+      # echo "* Did you mean?"
+      return 1
+  fi
+
+  local pkg_count=${#found_pkgs[@]}
+
+  declare -A indexed_pkgs
+
+  for i in ${!found_pkgs[@]}; do
+      current_count=$((pkg_count-1-i))
+      if [ $current_count == 0 ] ; then
+        echo "HEAD - ${found_pkgs[$i]} "
+        indexed_pkgs+=([HEAD]=${found_pkgs[$i]})
+      else
+        echo "HEAD~$current_count - ${found_pkgs[$i]} "
+        indexed_pkgs+=([HEAD~$current_count]=${found_pkgs[$i]})
+        indexed_pkgs+=([~$current_count]=${found_pkgs[$i]})
+      fi
+  done
+
+}
+
+
+list $@

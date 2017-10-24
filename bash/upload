@@ -1,0 +1,60 @@
+# !/bin/bash
+
+function upload {
+  local pkg_name=$1
+  local pkg_position=$2
+
+  local found_pkgs=( ./results/$HAB_ORIGIN-$pkg_name-*.hart )
+
+  if [ -z "$pkg_name" ] ; then
+      echo "To upload a package, I must know its name."
+      echo ""
+      echo " Try: $ upload PKG_NAME"
+      return 1
+  fi
+
+
+  if [ 0 = ${!found_pkgs[@]} ] ; then
+      echo "No packages found."
+      echo "* Is there a results directory?"
+      echo "* Did you specify the name of the package correctly?"
+      echo "* Did you build your package?"
+      # echo "* Did you want me to build something first?"
+      # echo "* In the results directory I found ..."
+      # echo "* Did you mean?"
+      return 1
+  fi
+
+  local pkg_count=${#found_pkgs[@]}
+
+  declare -A indexed_pkgs
+
+  for i in ${!found_pkgs[@]}; do
+      current_count=$((pkg_count-1-i))
+      if [ $current_count == 0 ] ; then
+        indexed_pkgs+=([HEAD]=${found_pkgs[$i]})
+      else
+        indexed_pkgs+=([HEAD~$current_count]=${found_pkgs[$i]})
+        indexed_pkgs+=([~$current_count]=${found_pkgs[$i]})
+      fi
+  done
+
+  # Run the latest package if no pkg_position has been specified.
+  local pkg_to_run=${indexed_pkgs[HEAD]}
+
+  # If there is a pkg_position then find that package. Stop if it cannot.
+  if ! [ -z "$pkg_position" ] ; then
+    pkg_to_run=${indexed_pkgs[$pkg_position]}
+
+    if [ -z "$pkg_to_run" ] ; then
+      echo "Could not find a package at $pkg_position. There are $pkg_count total package(s)."
+      return
+    fi
+  fi
+
+  echo "Uploading $pkg_to_run"
+  hab pkg upload $pkg_to_run
+}
+
+
+upload $@
