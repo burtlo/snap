@@ -58,3 +58,7 @@ $ upload pkg_name HEAD
 # OR
 $ upload pkg_name
 ```
+
+## Development
+
+Prior to this project I would describe myself as new to the BASH language. This is a way for me to learn how to work with the language and make some tools for myself. If you can make the things better I would love a pull request or comments on the code.
